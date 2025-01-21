@@ -31,30 +31,26 @@
         public static void Update()
         {
             // Update particle velocities
-            for (int i = 0; i < PX.Length; i++)
+            Parallel.For(0, PX.Length, i =>
             {
                 float ax = 0;
                 float ay = 0;
 
-                for (int j = i + 1; j < PX.Length; j++) // Only calculate for j > i
+                for (int j = 0; j < PX.Length; j++)
                 {
-                    float dx = PX[j] - PX[i];
-                    float dy = PY[j] - PY[i];
-                    float rSquared = dx * dx + dy * dy;
-
-                    if (rSquared > 0 && rSquared < ParticleDynamics.MaxRadius * ParticleDynamics.MaxRadius)
+                    if (i != j)
                     {
-                        float r = MathF.Sqrt(rSquared);
-                        float f = ParticleDynamics.Force(r / ParticleDynamics.MaxRadius, ParticleDynamics.AttractionFactor[Group[i], Group[j]]);
-                        float fx = f * dx / r;
-                        float fy = f * dy / r;
+                        float dx = PX[j] - PX[i];
+                        float dy = PY[j] - PY[i];
+                        float rSquared = dx * dx + dy * dy;
 
-                        ax += fx;
-                        ay += fy;
-
-                        // Apply symmetrical forces
-                        VX[j] -= fx * dt;
-                        VY[j] -= fy * dt;
+                        if (rSquared > 0 && rSquared < ParticleDynamics.MaxRadius * ParticleDynamics.MaxRadius)
+                        {
+                            float r = MathF.Sqrt(rSquared);
+                            float f = ParticleDynamics.Force(r / ParticleDynamics.MaxRadius, ParticleDynamics.AttractionFactor[Group[i], Group[j]]);
+                            ax += f * dx / r;
+                            ay += f * dy / r;
+                        }
                     }
                 }
 
@@ -65,7 +61,7 @@
                 VY[i] *= Friction;
                 VX[i] += ax * dt;
                 VY[i] += ay * dt;
-            }
+            });
 
 
             // Update particle positions

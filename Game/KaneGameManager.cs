@@ -17,6 +17,7 @@ namespace ParticleLife.Game
         public static Font DefaultFont = new Font();
 
         private static Color ClearColor = new Color(21, 21, 21, 21);
+        public static bool ClearColorToggle = false;
 
         public static Window RuntimeOptionsWindow = new Window(RuntimeOptionsWindowUpdate, new Rect(100, 100, 300, 600), "Runtime Options") { ShowPanel = true };
         public static Window SetupWindow = new Window(SetupWindowUpdate, new Rect(500, 100, 300, 600), "Setup") { ShowPanel = true };
@@ -27,7 +28,7 @@ namespace ParticleLife.Game
         private static void SetupWindowUpdate()
         {
             KaneUI.Label(SetupWindow.IndexToRect(0), "Particle Count");
-            SetupParticleCount = (int)KaneUI.Slider(SetupWindow.IndexToRect(1), SetupParticleCount, 1, 3000);
+            SetupParticleCount = (int)KaneUI.Slider(SetupWindow.IndexToRect(1), SetupParticleCount, 1, 8000);
             if (KaneUI.Button(SetupWindow.IndexToRect(2, 3, 2), "1000"))
             {
                 SetupParticleCount = 1000;
@@ -58,6 +59,9 @@ namespace ParticleLife.Game
 
             KaneUI.Label(RuntimeOptionsWindow.IndexToRect(12), "Particle Size");
             SimRenderer.ParticleSize = KaneUI.Slider(RuntimeOptionsWindow.IndexToRect(13), SimRenderer.ParticleSize, 1, 100);
+
+            SimRenderer.DrawPixels = KaneUI.CheckBox(RuntimeOptionsWindow.IndexToRect(14), SimRenderer.DrawPixels, "Draw Pixels");
+            ClearColorToggle = KaneUI.CheckBox(RuntimeOptionsWindow.IndexToRect(15), ClearColorToggle, "Clear Color");
         }
 
         public static void Init()
@@ -78,7 +82,10 @@ namespace ParticleLife.Game
         {
             InputManager.Update();
             Time.Update();
-            Raylib.ClearBackground(ClearColor);
+            if (ClearColorToggle)
+            {
+                Raylib.ClearBackground(ClearColor);
+            }
 
             Surface.Update();
             SimManager.Update();

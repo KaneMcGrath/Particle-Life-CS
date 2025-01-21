@@ -7,6 +7,7 @@ namespace ParticleLife.Sim
     {
         public static float ParticleSize = 5f;
         public static Color[] GroupColors = new Color[0];
+        public static bool DrawPixels = false;
 
         public static void Init(int GroupCount)
         {
@@ -23,8 +24,14 @@ namespace ParticleLife.Sim
             for (int i = 0; i < SimManager.PX.Length; i++)
             {
                 Vector2 screenPos = Surface.MainCamera.WorldToScreen(new Vector2(SimManager.PX[i], SimManager.PY[i]));
-                Raylib.DrawCircleV(screenPos, Surface.MainCamera.Scale(ParticleSize), GroupColors[SimManager.Group[i]]);
-                //Raylib.DrawPixelV(screenPos, GroupColors[SimManager.Group[i]]);
+                if (!DrawPixels)
+                {
+                    Raylib.DrawCircleV(screenPos, Surface.MainCamera.Scale(ParticleSize), GroupColors[SimManager.Group[i]]);
+                }
+                else
+                {
+                    Raylib.DrawPixelV(screenPos, GroupColors[SimManager.Group[i]]);
+                }
             }
             //DrawAttractionMatrix();
         }
