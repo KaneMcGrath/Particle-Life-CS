@@ -17,10 +17,10 @@ namespace ParticleLife.Game
         public float Zoom = 1f;
         public float MinZoom = 0.1f;
         public float MaxZoom = 50f;
-        public int MaxX = 4000;
-        public int MaxY = 4000;
-        public int MinX = -4000;
-        public int MinY = -4000;
+        public int MaxX = 40000;
+        public int MaxY = 40000;
+        public int MinX = -40000;
+        public int MinY = -40000;
 
         public int ViewportWidth
         {
