@@ -1,8 +1,9 @@
-﻿using ParticleLife.Game;
+﻿using ComputeSharp;
+using ParticleLife.Game;
 
 namespace ParticleLife.Sim
 {
-    public static class SimManager
+    public static partial class SimManager
     {
 
         public static float[] PX;
@@ -31,7 +32,30 @@ namespace ParticleLife.Sim
             ParticleDynamics.Init(groupCount);
             SimRenderer.Init(groupCount);
         }
+
         private static float StepTimer = 0f;
+
+        private static float[] Flatten2DArray(float[,] array, int width)
+        {
+            int rows = array.GetLength(0);
+            int cols = array.GetLength(1);
+            if (cols != width)
+            {
+                throw new ArgumentException("The provided width does not match the second dimension of the array.");
+            }
+
+            float[] flattenedArray = new float[rows * cols];
+
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    flattenedArray[i * cols + j] = array[i, j];
+                }
+            }
+
+            return flattenedArray;
+        }
         public static void Update()
         {
             if (Tools.timer(ref StepTimer, 10f))
@@ -45,61 +69,79 @@ namespace ParticleLife.Sim
             float width = Bounds[2] - Bounds[0];
             float height = Bounds[3] - Bounds[1];
 
+            using ReadWriteBuffer<float> PXBuffer = GraphicsDevice.GetDefault().AllocateReadWriteBuffer<float>(PX);
+            using ReadWriteBuffer<float> PYBuffer = GraphicsDevice.GetDefault().AllocateReadWriteBuffer<float>(PY);
+            using ReadWriteBuffer<float> VXBuffer = GraphicsDevice.GetDefault().AllocateReadWriteBuffer<float>(VX);
+            using ReadWriteBuffer<float> VYBuffer = GraphicsDevice.GetDefault().AllocateReadWriteBuffer<float>(VY);
+            using ReadWriteBuffer<int> GroupBuffer = GraphicsDevice.GetDefault().AllocateReadWriteBuffer(Group);
+            using ReadWriteBuffer<float> AttractorsBuffer = GraphicsDevice.GetDefault().AllocateReadWriteBuffer(Flatten2DArray(ParticleDynamics.AttractionMatrix, ParticleDynamics.AttractionMatrix.GetLength(0)));
+
+            GraphicsDevice.GetDefault().For(PX.Length, new ParticleUpdate(PXBuffer, PYBuffer, VXBuffer, VYBuffer, GroupBuffer, ParticleDynamics.MaxRadius, ParticleDynamics.ForceMultiplier, width, height, maxRadiusReciprocal, multiplier, AttractorsBuffer, ParticleDynamics.AttractionMatrix.GetLength(0)));
+
+            PXBuffer.CopyTo(PX);
+            PYBuffer.CopyTo(PY);
+            VXBuffer.CopyTo(VX);
+            VYBuffer.CopyTo(VY);
+
+
             // Update particle velocities
-            Parallel.For(0, PX.Length, i =>
+            if (false)
             {
-                float ax = 0;
-                float ay = 0;
-
-                for (int j = 0; j < PX.Length; j++)
+                Parallel.For(0, PX.Length, i =>
                 {
-                    if (i != j)
+                    float ax = 0;
+                    float ay = 0;
+
+                    for (int j = 0; j < PX.Length; j++)
                     {
-                        // Calculate the wrapped distance between particles
-                        float dx = PX[j] - PX[i];
-                        float dy = PY[j] - PY[i];
-
-                        // Wrap distances to consider the toroidal space
-                        if (dx > width / 2)
+                        if (i != j)
                         {
-                            dx -= width;   // Wrap around right to left
-                        }
+                            // Calculate the wrapped distance between particles
+                            float dx = PX[j] - PX[i];
+                            float dy = PY[j] - PY[i];
 
-                        if (dx < -width / 2)
-                        {
-                            dx += width;  // Wrap around left to right
-                        }
+                            // Wrap distances to consider the toroidal space
+                            if (dx > width / 2)
+                            {
+                                dx -= width;   // Wrap around right to left
+                            }
 
-                        if (dy > height / 2)
-                        {
-                            dy -= height; // Wrap around top to bottom
-                        }
+                            if (dx < -width / 2)
+                            {
+                                dx += width;  // Wrap around left to right
+                            }
 
-                        if (dy < -height / 2)
-                        {
-                            dy += height; // Wrap around bottom to top
-                        }
+                            if (dy > height / 2)
+                            {
+                                dy -= height; // Wrap around top to bottom
+                            }
 
-                        float rSquared = dx * dx + dy * dy;
+                            if (dy < -height / 2)
+                            {
+                                dy += height; // Wrap around bottom to top
+                            }
 
-                        if (rSquared > 0 && rSquared < ParticleDynamics.MaxRadius * ParticleDynamics.MaxRadius)
-                        {
-                            float r = MathF.Sqrt(rSquared);
-                            float f = ParticleDynamics.Force(r * maxRadiusReciprocal, ParticleDynamics.AttractionFactor[Group[i], Group[j]]);
-                            ax += f * dx / r;
-                            ay += f * dy / r;
+                            float rSquared = dx * dx + dy * dy;
+
+                            if (rSquared > 0 && rSquared < ParticleDynamics.MaxRadius * ParticleDynamics.MaxRadius)
+                            {
+                                float r = MathF.Sqrt(rSquared);
+                                float f = ParticleDynamics.Force(r * maxRadiusReciprocal, ParticleDynamics.AttractionMatrix[Group[i], Group[j]]);
+                                ax += f * dx / r;
+                                ay += f * dy / r;
+                            }
                         }
                     }
-                }
 
-                ax *= multiplier;
-                ay *= multiplier;
+                    ax *= multiplier;
+                    ay *= multiplier;
 
-                VX[i] *= Friction;
-                VY[i] *= Friction;
-                VX[i] += ax * dt;
-                VY[i] += ay * dt;
-            });
+                    VX[i] *= Friction;
+                    VY[i] *= Friction;
+                    VX[i] += ax * dt;
+                    VY[i] += ay * dt;
+                });
+            }
 
             // Update particle positions
             for (int i = 0; i < PX.Length; i++)
@@ -129,7 +171,66 @@ namespace ParticleLife.Sim
                 }
             }
         }
+        [ThreadGroupSize(DefaultThreadGroupSizes.X)]
+        [GeneratedComputeShaderDescriptor]
+        public readonly partial struct ParticleUpdate(ReadWriteBuffer<float> PXBuffer, ReadWriteBuffer<float> PYBuffer, ReadWriteBuffer<float> VXBuffer, ReadWriteBuffer<float> VYBuffer, ReadWriteBuffer<int> groups,
+            float MaxRadius, float ForceMultiplier, float width, float height, float MRR, float multiplier, ReadWriteBuffer<float> Attractors, int attractorsArrayWidth) : IComputeShader
+        {
+            public void Execute()
+            {
 
+                int i = ThreadIds.X;
+                float ax = 0;
+                float ay = 0;
+                for (int j = 0; j < PXBuffer.Length; j++)
+                {
+                    if (i != j)
+                    {
+                        // Calculate the wrapped distance between particles
+                        float dx = PXBuffer[j] - PXBuffer[i];
+                        float dy = PYBuffer[j] - PYBuffer[i];
+                        // Wrap distances to consider the toroidal space
+                        if (dx > width / 2)
+                        {
+                            dx -= width;   // Wrap around right to left
+                        }
+                        if (dx < -width / 2)
+                        {
+                            dx += width;  // Wrap around left to right
+                        }
+                        if (dy > height / 2)
+                        {
+                            dy -= height; // Wrap around top to bottom
+                        }
+                        if (dy < -height / 2)
+                        {
+                            dy += height; // Wrap around bottom to top
+                        }
+
+                        float rSquared = dx * dx + dy * dy;
+
+                        if (rSquared > 0 && rSquared < ParticleDynamics.MaxRadius * ParticleDynamics.MaxRadius)
+                        {
+                            ComputeSharp.Float2 vec = new ComputeSharp.Float2(dx, dy);
+                            float r = Hlsl.Length(vec);
+
+                            //float r = MathF.Sqrt(rSquared);
+                            float a = Attractors[groups[i] * attractorsArrayWidth + groups[j]];
+                            float f = ParticleDynamics.GForce(r * MRR, a);
+                            ax += f * dx / r;
+                            ay += f * dy / r;
+                        }
+                    }
+                }
+
+                ax *= multiplier;
+                ay *= multiplier;
+                VXBuffer[i] *= Friction;
+                VYBuffer[i] *= Friction;
+                VXBuffer[i] += ax * dt;
+                VYBuffer[i] += ay * dt;
+            }
+        }
 
 
         private static void RandomizeParticles(int count, int groupCount)

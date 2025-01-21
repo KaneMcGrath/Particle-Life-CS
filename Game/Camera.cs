@@ -114,11 +114,11 @@ namespace ParticleLife.Game
             }
             if (Raylib.IsKeyDown(KeyboardKey.Up))
             {
-                Zoom += 10f * Time.DeltaTime;
+                Zoom += (Zoom / MaxZoom) * 100f * Time.DeltaTime;
             }
             if (Raylib.IsKeyDown(KeyboardKey.Down))
             {
-                Zoom -= 10f * Time.DeltaTime;
+                Zoom -= (Zoom / MaxZoom) * 100f * Time.DeltaTime;
             }
             //Raylib.DrawCircle((int)View.ConvertXToScreenSpace(1000f), (int)View.ConvertYToScreenSpace(1000f), 10f, Color.Green);
             //if (zoomLevel != 0f) View.ScaleFromPoint(1000f, 1000f, zoomLevel);
