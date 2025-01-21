@@ -1,4 +1,5 @@
 ﻿using ParticleLife.Game;
+using ParticleLife.Sim;
 using Raylib_cs;
 
 namespace ParticleLife
@@ -14,6 +15,7 @@ namespace ParticleLife
                 Raylib.BeginDrawing();
                 KaneGameManager.Update();
                 Raylib.EndDrawing();
+                FrameRecorder.Update();
             }
         }
     }

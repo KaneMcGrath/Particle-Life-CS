@@ -22,7 +22,7 @@ namespace ParticleLife.Game
         public static Window RuntimeOptionsWindow = new Window(RuntimeOptionsWindowUpdate, new Rect(100, 100, 300, 600), "Runtime Options") { };
         public static Window SetupWindow = new Window(SetupWindowUpdate, new Rect(500, 100, 300, 600), "Setup") { };
 
-        private static int SetupParticleCount = 10000;
+        private static int SetupParticleCount = 4000;
         private static int SetupGroupCount = 8;
 
         private static void SetupWindowUpdate()
@@ -65,6 +65,12 @@ namespace ParticleLife.Game
 
             SimRenderer.DrawPixels = KaneUI.CheckBox(RuntimeOptionsWindow.IndexToRect(14), SimRenderer.DrawPixels, "Draw Pixels");
             ClearColorToggle = KaneUI.CheckBox(RuntimeOptionsWindow.IndexToRect(15), ClearColorToggle, "Clear Color");
+            if (KaneUI.Button(RuntimeOptionsWindow.IndexToRect(16), "Fullscreen"))
+            {
+                Raylib.SetWindowSize(Raylib.GetMonitorWidth(0), Raylib.GetMonitorHeight(0));
+                Raylib.ToggleFullscreen();
+            }
+            FrameRecorder.Recording = KaneUI.CheckBox(RuntimeOptionsWindow.IndexToRect(17), FrameRecorder.Recording, "Record Frames");
         }
 
         public static void Init()
@@ -106,8 +112,8 @@ namespace ParticleLife.Game
             Konsole.Update();
             PanelManager.UpdatePanels();
             PopNotification.Update();
-            KaneUI.Label(new Rect(10, 10, 200, 20), "FPS: " + Raylib.GetFPS());
-            KaneUI.Label(new Rect(10, 30, 200, 20), "FrameTime: " + Raylib.GetFrameTime());
+            //KaneUI.Label(new Rect(10, 10, 200, 20), "FPS: " + Raylib.GetFPS());
+            //KaneUI.Label(new Rect(10, 30, 200, 20), "FrameTime: " + Raylib.GetFrameTime());
 
         }
     }

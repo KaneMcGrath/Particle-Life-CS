@@ -1,4 +1,6 @@
-﻿namespace ParticleLife.Sim
+﻿using ParticleLife.Game;
+
+namespace ParticleLife.Sim
 {
     public static class SimManager
     {
@@ -15,6 +17,8 @@
         public static float dt = 0.001f;
         public static float Friction = 0.65f;
 
+        public static int StepCounter = 0;
+
         public static void Init(int count, int groupCount)
         {
             GroupCount = groupCount;
@@ -27,9 +31,15 @@
             ParticleDynamics.Init(groupCount);
             SimRenderer.Init(groupCount);
         }
-
+        private static float StepTimer = 0f;
         public static void Update()
         {
+            if (Tools.timer(ref StepTimer, 10f))
+            {
+                Console.WriteLine(StepCounter + " steps");
+                StepCounter = 0;
+            }
+            StepCounter++;
             float multiplier = ParticleDynamics.MaxRadius * ParticleDynamics.ForceMultiplier;
             float maxRadiusReciprocal = 1.0f / ParticleDynamics.MaxRadius;
             float width = Bounds[2] - Bounds[0];
