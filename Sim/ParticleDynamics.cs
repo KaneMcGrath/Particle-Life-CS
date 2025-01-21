@@ -6,9 +6,9 @@ namespace ParticleLife.Sim
     {
         private static Random random = new Random();
         public static float[,] AttractionFactor = new float[10, 10];
-        public static float MaxRadius = 100f;
+        public static float MaxRadius = 1000f;
         public static readonly float beta = 0.3f;
-        public static float ForceMultiplier = 50f;
+        public static float ForceMultiplier = 250f;
 
         public static void Init(int GroupCount)
         {

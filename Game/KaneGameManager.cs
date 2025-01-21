@@ -17,12 +17,12 @@ namespace ParticleLife.Game
         public static Font DefaultFont = new Font();
 
         private static Color ClearColor = new Color(21, 21, 21, 21);
-        public static bool ClearColorToggle = false;
+        public static bool ClearColorToggle = true;
 
-        public static Window RuntimeOptionsWindow = new Window(RuntimeOptionsWindowUpdate, new Rect(100, 100, 300, 600), "Runtime Options") { ShowPanel = true };
-        public static Window SetupWindow = new Window(SetupWindowUpdate, new Rect(500, 100, 300, 600), "Setup") { ShowPanel = true };
+        public static Window RuntimeOptionsWindow = new Window(RuntimeOptionsWindowUpdate, new Rect(100, 100, 300, 600), "Runtime Options") { };
+        public static Window SetupWindow = new Window(SetupWindowUpdate, new Rect(500, 100, 300, 600), "Setup") { };
 
-        private static int SetupParticleCount = 1000;
+        private static int SetupParticleCount = 10000;
         private static int SetupGroupCount = 8;
 
         private static void SetupWindowUpdate()
@@ -41,6 +41,9 @@ namespace ParticleLife.Game
             {
                 SimManager.Init(SetupParticleCount, SetupGroupCount);
             }
+
+            KaneUI.Label(SetupWindow.IndexToRect(6), "CameraPOS :" + Surface.MainCamera.Position);
+            KaneUI.Label(SetupWindow.IndexToRect(7), "Zoom :" + Surface.MainCamera.Zoom);
         }
 
         private static void RuntimeOptionsWindowUpdate()

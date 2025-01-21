@@ -12,8 +12,8 @@
         public static int GroupCount = 8;
 
         public static float[] Bounds = new float[] { 0, 0, 5000f, 5000f };
-        public static float dt = 0.002f;
-        public static float Friction = 0.999f;
+        public static float dt = 0.001f;
+        public static float Friction = 0.65f;
 
         public static void Init(int count, int groupCount)
         {
@@ -32,6 +32,9 @@
         {
             float multiplier = ParticleDynamics.MaxRadius * ParticleDynamics.ForceMultiplier;
             float maxRadiusReciprocal = 1.0f / ParticleDynamics.MaxRadius;
+            float width = Bounds[2] - Bounds[0];
+            float height = Bounds[3] - Bounds[1];
+
             // Update particle velocities
             Parallel.For(0, PX.Length, i =>
             {
@@ -42,14 +45,37 @@
                 {
                     if (i != j)
                     {
+                        // Calculate the wrapped distance between particles
                         float dx = PX[j] - PX[i];
                         float dy = PY[j] - PY[i];
+
+                        // Wrap distances to consider the toroidal space
+                        if (dx > width / 2)
+                        {
+                            dx -= width;   // Wrap around right to left
+                        }
+
+                        if (dx < -width / 2)
+                        {
+                            dx += width;  // Wrap around left to right
+                        }
+
+                        if (dy > height / 2)
+                        {
+                            dy -= height; // Wrap around top to bottom
+                        }
+
+                        if (dy < -height / 2)
+                        {
+                            dy += height; // Wrap around bottom to top
+                        }
+
                         float rSquared = dx * dx + dy * dy;
 
                         if (rSquared > 0 && rSquared < ParticleDynamics.MaxRadius * ParticleDynamics.MaxRadius)
                         {
                             float r = MathF.Sqrt(rSquared);
-                            float f = ParticleDynamics.Force(r / ParticleDynamics.MaxRadius, ParticleDynamics.AttractionFactor[Group[i], Group[j]]);
+                            float f = ParticleDynamics.Force(r * maxRadiusReciprocal, ParticleDynamics.AttractionFactor[Group[i], Group[j]]);
                             ax += f * dx / r;
                             ay += f * dy / r;
                         }
@@ -65,16 +91,32 @@
                 VY[i] += ay * dt;
             });
 
-
             // Update particle positions
             for (int i = 0; i < PX.Length; i++)
             {
                 PX[i] += VX[i] * dt;
                 PY[i] += VY[i] * dt;
-                if (PX[i] < Bounds[0]) { PX[i] = Bounds[0]; VX[i] = -VX[i]; }
-                if (PX[i] > Bounds[2]) { PX[i] = Bounds[2]; VX[i] = -VX[i]; }
-                if (PY[i] < Bounds[1]) { PY[i] = Bounds[1]; VY[i] = -VY[i]; }
-                if (PY[i] > Bounds[3]) { PY[i] = Bounds[3]; VY[i] = -VY[i]; }
+
+                // Wrap positions to keep particles within bounds
+                if (PX[i] < Bounds[0])
+                {
+                    PX[i] += width;
+                }
+
+                if (PX[i] > Bounds[2])
+                {
+                    PX[i] -= width;
+                }
+
+                if (PY[i] < Bounds[1])
+                {
+                    PY[i] += height;
+                }
+
+                if (PY[i] > Bounds[3])
+                {
+                    PY[i] -= height;
+                }
             }
         }
 

@@ -15,7 +15,7 @@ namespace ParticleLife.Game
         public Constraints DragBoundry = new Constraints(0);
         public float Rotation = 0f;
         public float Zoom = 1f;
-        public float MinZoom = 0.03f;
+        public float MinZoom = 0.1f;
         public float MaxZoom = 50f;
         public int MaxX = 4000;
         public int MaxY = 4000;
