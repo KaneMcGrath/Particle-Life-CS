@@ -30,6 +30,8 @@
 
         public static void Update()
         {
+            float multiplier = ParticleDynamics.MaxRadius * ParticleDynamics.ForceMultiplier;
+            float maxRadiusReciprocal = 1.0f / ParticleDynamics.MaxRadius;
             // Update particle velocities
             Parallel.For(0, PX.Length, i =>
             {
@@ -54,8 +56,8 @@
                     }
                 }
 
-                ax *= ParticleDynamics.MaxRadius * ParticleDynamics.ForceMultiplier;
-                ay *= ParticleDynamics.MaxRadius * ParticleDynamics.ForceMultiplier;
+                ax *= multiplier;
+                ay *= multiplier;
 
                 VX[i] *= Friction;
                 VY[i] *= Friction;
