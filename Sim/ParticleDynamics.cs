@@ -23,17 +23,22 @@ namespace ParticleLife.Sim
             }
         }
 
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static float Force(float r, float a)
         {
             if (r < beta)
             {
                 return r / beta - 1;
             }
-            else if (beta < r && r < 1)
+            else if (r < 1) // Combining "beta < r && r < 1"
             {
-                return a * (1 - Math.Abs(2 * r - 1 - beta) / (1 - beta));
+                return a * (1 - MathF.Abs(2 * (r - 0.5f) - beta) / (1 - beta));
             }
-            else { return 0; }
+            else
+            {
+                return 0;
+            }
         }
     }
 }
