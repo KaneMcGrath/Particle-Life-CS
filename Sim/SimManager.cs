@@ -35,22 +35,32 @@
             {
                 float ax = 0;
                 float ay = 0;
-                for (int j = 0; j < PX.Length; j++)
+
+                for (int j = i + 1; j < PX.Length; j++) // Only calculate for j > i
                 {
-                    if (i != j)
+                    float dx = PX[j] - PX[i];
+                    float dy = PY[j] - PY[i];
+                    float rSquared = dx * dx + dy * dy;
+
+                    if (rSquared > 0 && rSquared < ParticleDynamics.MaxRadius * ParticleDynamics.MaxRadius)
                     {
-                        float r = FastDistance(PX[i], PY[i], PX[j], PY[j]);
-                        if (r > 0 && r < ParticleDynamics.MaxRadius)
-                        {
-                            float f = ParticleDynamics.Force(r / ParticleDynamics.MaxRadius, ParticleDynamics.AttractionFactor[Group[i], Group[j]]);
-                            ax += f * (PX[j] - PX[i]) / r;
-                            ay += f * (PY[j] - PY[i]) / r;
-                        }
+                        float r = MathF.Sqrt(rSquared);
+                        float f = ParticleDynamics.Force(r / ParticleDynamics.MaxRadius, ParticleDynamics.AttractionFactor[Group[i], Group[j]]);
+                        float fx = f * dx / r;
+                        float fy = f * dy / r;
+
+                        ax += fx;
+                        ay += fy;
+
+                        // Apply symmetrical forces
+                        VX[j] -= fx * dt;
+                        VY[j] -= fy * dt;
                     }
                 }
 
                 ax *= ParticleDynamics.MaxRadius * ParticleDynamics.ForceMultiplier;
                 ay *= ParticleDynamics.MaxRadius * ParticleDynamics.ForceMultiplier;
+
                 VX[i] *= Friction;
                 VY[i] *= Friction;
                 VX[i] += ax * dt;
