@@ -38,7 +38,7 @@ namespace ParticleLife.Sim
             {
                 MainCamera.CameraControls();
             }
-            DrawBackgroundCheckerboard();
+            //DrawBackgroundCheckerboard();
         }
         public static int TextureDrawCount = 0;
 

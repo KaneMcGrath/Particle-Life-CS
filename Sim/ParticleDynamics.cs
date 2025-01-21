@@ -1,53 +1,39 @@
-﻿namespace ParticleLife.Sim
+﻿using ParticleLife.Game;
+
+namespace ParticleLife.Sim
 {
     public static class ParticleDynamics
     {
         private static Random random = new Random();
         public static float[,] AttractionFactor = new float[10, 10];
+        public static float MaxRadius = 100f;
+        public static readonly float beta = 0.3f;
+        public static float ForceMultiplier = 50f;
 
-        public static void RandomizeAttraction(int GroupCount)
+        public static void Init(int GroupCount)
         {
             AttractionFactor = new float[GroupCount, GroupCount];
             for (int i = 0; i < GroupCount; i++)
             {
                 for (int j = 0; j < GroupCount; j++)
                 {
-                    AttractionFactor[i, j] = (random.NextSingle() * 2) - 0.5f;
+                    AttractionFactor[i, j] = ((float)random.NextDouble() * 2f) - 1f;
+                    Konsole.Log("Attraction Factor: " + AttractionFactor[i, j]);
                 }
             }
         }
 
-        public static readonly float PeakDistance = 80f;
-        public static readonly float TailDistance = 150f;
-        public static readonly float RepulsionEnd = 20f;
-        public static readonly float AttractorMultiplyer = 100f;
-        public static readonly float RepulsionMultiplyer = 20f;
-
-        //Force curve more closely modelling the example video
-        public static float GetAttraction(int GroupA, int GroupB, float Distance)
+        public static float Force(float r, float a)
         {
-            if (Distance < RepulsionEnd)
+            if (r < beta)
             {
-                return -(RepulsionMultiplyer / RepulsionEnd) * Distance + RepulsionMultiplyer;
+                return r / beta - 1;
             }
-            else if (Distance < PeakDistance)
+            else if (beta < r && r < 1)
             {
-                return (AttractionFactor[GroupA, GroupB] / (PeakDistance - RepulsionEnd)) * (Distance - RepulsionEnd);
+                return a * (1 - Math.Abs(2 * r - 1 - beta) / (1 - beta));
             }
-            else
-            {
-                return AttractionFactor[GroupA, GroupB] * ((TailDistance - Distance) / (TailDistance - PeakDistance));
-            }
-        }
-
-        public static float GetAttractionForce(int GroupA, int GroupB, float Distance)
-        {
-            return GetAttraction(GroupA, GroupB, Distance) * AttractorMultiplyer;
-        }
-
-        public static void Update()
-        {
-
+            else { return 0; }
         }
     }
 }
