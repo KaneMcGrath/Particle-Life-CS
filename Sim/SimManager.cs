@@ -20,7 +20,7 @@ namespace ParticleLife.Sim
 
         public static int StepCounter = 0;
 
-        public static void Init(int count, int groupCount)
+        public static void Init(int count, int groupCount, ParticleDispersionOptions options = ParticleDispersionOptions.Random)
         {
             GroupCount = groupCount;
             PX = new float[count];
@@ -28,7 +28,7 @@ namespace ParticleLife.Sim
             VX = new float[count];
             VY = new float[count];
             Group = new int[count];
-            RandomizeParticles(count, groupCount);
+            DistributeParticles(count, groupCount, options);
             ParticleDynamics.Init(groupCount);
             SimRenderer.Init(groupCount);
         }
@@ -58,12 +58,6 @@ namespace ParticleLife.Sim
         }
         public static void Update()
         {
-            if (Tools.timer(ref StepTimer, 10f))
-            {
-                Console.WriteLine(StepCounter + " steps");
-                StepCounter = 0;
-            }
-            StepCounter++;
             float multiplier = ParticleDynamics.MaxRadius * ParticleDynamics.ForceMultiplier;
             float maxRadiusReciprocal = 1.0f / ParticleDynamics.MaxRadius;
             float width = Bounds[2] - Bounds[0];
@@ -73,10 +67,10 @@ namespace ParticleLife.Sim
             using ReadWriteBuffer<float> PYBuffer = GraphicsDevice.GetDefault().AllocateReadWriteBuffer<float>(PY);
             using ReadWriteBuffer<float> VXBuffer = GraphicsDevice.GetDefault().AllocateReadWriteBuffer<float>(VX);
             using ReadWriteBuffer<float> VYBuffer = GraphicsDevice.GetDefault().AllocateReadWriteBuffer<float>(VY);
-            using ReadWriteBuffer<int> GroupBuffer = GraphicsDevice.GetDefault().AllocateReadWriteBuffer(Group);
-            using ReadWriteBuffer<float> AttractorsBuffer = GraphicsDevice.GetDefault().AllocateReadWriteBuffer(Flatten2DArray(ParticleDynamics.AttractionMatrix, ParticleDynamics.AttractionMatrix.GetLength(0)));
+            using ReadOnlyBuffer<int> GroupBuffer = GraphicsDevice.GetDefault().AllocateReadOnlyBuffer(Group);
+            using ReadOnlyBuffer<float> AttractorsBuffer = GraphicsDevice.GetDefault().AllocateReadOnlyBuffer(Flatten2DArray(ParticleDynamics.AttractionMatrix, ParticleDynamics.AttractionMatrix.GetLength(0)));
 
-            GraphicsDevice.GetDefault().For(PX.Length, new ParticleUpdate(PXBuffer, PYBuffer, VXBuffer, VYBuffer, GroupBuffer, ParticleDynamics.MaxRadius, ParticleDynamics.ForceMultiplier, width, height, maxRadiusReciprocal, multiplier, AttractorsBuffer, ParticleDynamics.AttractionMatrix.GetLength(0)));
+            GraphicsDevice.GetDefault().For(PX.Length, new ParticleUpdate(PXBuffer, PYBuffer, VXBuffer, VYBuffer, GroupBuffer, ParticleDynamics.MaxRadius, ParticleDynamics.ForceMultiplier, width, width / 2, height, height / 2, maxRadiusReciprocal, ParticleDynamics.MaxRadius * ParticleDynamics.MaxRadius, multiplier, AttractorsBuffer, ParticleDynamics.AttractionMatrix.GetLength(0)));
             //GraphicsDevice.GetDefault().For(PX.Length, new ParticlePositionUpdate(PXBuffer, PYBuffer, VXBuffer, VYBuffer, dt, width, height, Bounds[2]));
             PXBuffer.CopyTo(PX);
             PYBuffer.CopyTo(PY);
@@ -175,9 +169,26 @@ namespace ParticleLife.Sim
         }
         [ThreadGroupSize(DefaultThreadGroupSizes.X)]
         [GeneratedComputeShaderDescriptor]
-        public readonly partial struct ParticleUpdate(ReadWriteBuffer<float> PXBuffer, ReadWriteBuffer<float> PYBuffer, ReadWriteBuffer<float> VXBuffer, ReadWriteBuffer<float> VYBuffer, ReadWriteBuffer<int> groups,
-            float MaxRadius, float ForceMultiplier, float width, float height, float MRR, float multiplier, ReadWriteBuffer<float> Attractors, int attractorsArrayWidth) : IComputeShader
+        public readonly partial struct ParticleUpdate(
+            ReadWriteBuffer<float> PXBuffer,
+            ReadWriteBuffer<float> PYBuffer,
+            ReadWriteBuffer<float> VXBuffer,
+            ReadWriteBuffer<float> VYBuffer,
+            ReadOnlyBuffer<int> groups,
+            float MaxRadius,
+            float ForceMultiplier,
+            float width,
+            float hwidth,
+            float height,
+            float hheight,
+            float MRR,
+            float MRSquared,
+            float multiplier,
+            ReadOnlyBuffer<float> Attractors,
+            int attractorsArrayWidth
+        ) : IComputeShader
         {
+
             public void Execute()
             {
 
@@ -192,19 +203,19 @@ namespace ParticleLife.Sim
                         float dx = PXBuffer[j] - PXBuffer[i];
                         float dy = PYBuffer[j] - PYBuffer[i];
                         // Wrap distances to consider the toroidal space
-                        if (dx > width / 2)
+                        if (dx > hwidth)
                         {
                             dx -= width;   // Wrap around right to left
                         }
-                        if (dx < -width / 2)
+                        if (dx < -hheight)
                         {
                             dx += width;  // Wrap around left to right
                         }
-                        if (dy > height / 2)
+                        if (dy > hwidth)
                         {
                             dy -= height; // Wrap around top to bottom
                         }
-                        if (dy < -height / 2)
+                        if (dy < -hheight)
                         {
                             dy += height; // Wrap around bottom to top
                         }
@@ -213,10 +224,7 @@ namespace ParticleLife.Sim
 
                         if (rSquared > 0 && rSquared < ParticleDynamics.MaxRadius * ParticleDynamics.MaxRadius)
                         {
-                            ComputeSharp.Float2 vec = new ComputeSharp.Float2(dx, dy);
-                            float r = Hlsl.Length(vec);
-
-                            //float r = MathF.Sqrt(rSquared);
+                            float r = Hlsl.Length(new ComputeSharp.Float2(dx, dy));
                             float a = Attractors[groups[i] * attractorsArrayWidth + groups[j]];
                             float f = ParticleDynamics.GForce(r * MRR, a);
                             ax += f * dx / r;
@@ -233,40 +241,58 @@ namespace ParticleLife.Sim
                 VYBuffer[i] += ay * dt;
             }
         }
-        [ThreadGroupSize(DefaultThreadGroupSizes.X)]
-        [GeneratedComputeShaderDescriptor]
-        public readonly partial struct ParticlePositionUpdate(ReadWriteBuffer<float> PX, ReadWriteBuffer<float> PY, ReadWriteBuffer<float> VX, ReadWriteBuffer<float> VY, float dt, float width, float height, float bounds) : IComputeShader
+
+        public static void DistributeParticles(int count, int groupCount, ParticleDispersionOptions options)
         {
-            public void Execute()
+            switch (options)
             {
-                int i = ThreadIds.X;
-                // Update particle positions
+                case ParticleDispersionOptions.Random:
+                    RandomizeParticles(count, groupCount);
+                    break;
 
-                PX[i] += VX[i] * dt;
-                PY[i] += VY[i] * dt;
+                case ParticleDispersionOptions.Distributed:
+                    int sideCount = (int)Math.Sqrt(count);
+                    for (int i = 0; i < count; i++)
+                    {
+                        PX[i] = (i % sideCount) * Bounds[2] / sideCount;
+                        PY[i] = (i / sideCount) * Bounds[3] / sideCount;
+                        VX[i] = 0f;
+                        VY[i] = 0f;
+                        Group[i] = i % groupCount;
+                    }
 
-                // Wrap positions to keep particles within bounds
-                if (PX[i] < 0)
-                {
-                    PX[i] += width;
-                }
+                    break;
 
-                if (PX[i] > bounds)
-                {
-                    PX[i] -= width;
-                }
+                //Pie chart like distribution
+                case ParticleDispersionOptions.Pie:
+                    DistributePie(count, groupCount);
+                    break;
 
-                if (PY[i] < 0)
-                {
-                    PY[i] += height;
-                }
 
-                if (PY[i] > bounds)
-                {
-                    PY[i] -= height;
-                }
+                //Distribute large squares of each group side-by-side
+                case ParticleDispersionOptions.Grid:
+                    for (int i = 0; i < count; i++)
+                    {
+                        PX[i] = (i % groupCount) * Bounds[2] / groupCount;
+                        PY[i] = (i / groupCount) * Bounds[3] / groupCount;
+                        VX[i] = 0f;
+                        VY[i] = 0f;
+                        Group[i] = i % groupCount;
+                    }
+                    break;
 
+                case ParticleDispersionOptions.Circle:
+                    for (int i = 0; i < count; i++)
+                    {
+                        PX[i] = Bounds[2] / 2 + (float)Math.Cos(i * Math.PI * 2 / count) * Bounds[2] / 4;
+                        PY[i] = Bounds[3] / 2 + (float)Math.Sin(i * Math.PI * 2 / count) * Bounds[3] / 4;
+                        VX[i] = 0f;
+                        VY[i] = 0f;
+                        Group[i] = i % groupCount;
+                    }
+                    break;
             }
+
         }
 
         public static void RandomizeParticles(int count, int groupCount)
@@ -279,6 +305,42 @@ namespace ParticleLife.Sim
                 VX[i] = 0f;
                 VY[i] = 0f;
                 Group[i] = random.Next(0, groupCount);
+            }
+        }
+        public static void DistributePie(int count, int groupCount)
+        {
+            if (count <= 0 || groupCount <= 0)
+            {
+                throw new ArgumentException("Count and groupCount must be greater than 0.");
+            }
+
+            Random random = new Random();
+            int index = 0;
+
+            for (int g = 0; g < groupCount; g++)
+            {
+                float startAngle = g * (2.0f * (float)Math.PI / groupCount);
+                float endAngle = (g + 1) * (2.0f * (float)Math.PI / groupCount);
+
+                int pointsInGroup = count / groupCount + (g < count % groupCount ? 1 : 0);
+
+                for (int p = 0; p < pointsInGroup; p++)
+                {
+                    // Generate a random radius (square root ensures uniform distribution in area)
+                    float radius = (float)Math.Sqrt(random.NextDouble()) * 0.5f; // Scale to radius of 0.5
+
+                    // Generate a random angle within the group's slice
+                    float angle = (float)(startAngle + random.NextDouble() * (endAngle - startAngle));
+
+                    // Convert polar coordinates to Cartesian coordinates (shift to center at 0.5, 0.5)
+                    PX[index] = (0.5f + radius * (float)Math.Cos(angle)) * (Bounds[2] / 2) + (Bounds[2] / 4);
+                    PY[index] = (0.5f + radius * (float)Math.Sin(angle)) * (Bounds[2] / 2) + (Bounds[2] / 4);
+
+                    // Assign the group index
+                    Group[index] = g;
+
+                    index++;
+                }
             }
         }
 

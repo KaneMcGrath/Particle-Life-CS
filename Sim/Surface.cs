@@ -38,8 +38,34 @@ namespace ParticleLife.Sim
             {
                 MainCamera.CameraControls();
             }
+            FollowParticleUpdate();
             //DrawBackgroundCheckerboard();
         }
+        public static int FollowedParticle = 0;
+        public static bool FollowParticle(int index)
+        {
+            if (SimManager.VX.Count() > index)
+            {
+                FollowedParticle = index;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private static void FollowParticleUpdate()
+        {
+            if (KaneGameManager.FollowParticle)
+            {
+                if (SimManager.VX.Count() > FollowedParticle)
+                {
+                    MainCamera.Position = new Vector2(SimManager.PX[FollowedParticle], SimManager.PY[FollowedParticle]);
+                }
+            }
+        }
+
         public static int TextureDrawCount = 0;
 
         private static void DrawBackgroundCheckerboard()

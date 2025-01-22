@@ -18,6 +18,16 @@ namespace ParticleLife.Game
             PopMessages.Add(new PopMessage(new XY(KaneFoundation.GetMouseX(), KaneFoundation.GetMouseY() - 15), message, Color));
         }
 
+        public static void Message(XY pos, string message, RGBA Color)
+        {
+            PopMessages.Add(new PopMessage(pos, message, Color));
+        }
+
+        public static void Message(XY pos, string message)
+        {
+            Message(pos, message, DefaultColors.White);
+        }
+
         public static void Update()
         {
             if (PopMessages.Count > 0)

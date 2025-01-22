@@ -343,6 +343,44 @@ namespace KaneUI7
 
             return newValue;
         }
+        private static DropDownPanel DropdownSharedPanel = new DropDownPanel(() => { }, 60);
+
+        public static T EnumSelector<T>(Rect Rect, T value, int DropDownWidth = 300, bool draw = true) where T : System.Enum
+        {
+            string[] names = System.Enum.GetNames(typeof(T));
+            int index = System.Array.IndexOf(names, value.ToString());
+            if (index < 0)
+            {
+                index = 0;
+            }
+            KaneBlocks.Box(Rect);
+            Label(Rect, names[index], 20, 4);
+            if (Button(new Rect(Rect.X + Rect.Width - Rect.Height, Rect.Y, Rect.Height, Rect.Height), "\\/"))
+            {
+                DropdownSharedPanel.SpawnDropdown(new Rect(Rect.X + Rect.Width - 30, Rect.Y + Rect.Height, DropDownWidth, DefaultItemHeight * names.Length), names);
+
+                //DropdownSharedPanel.PanelArea = ;
+                DropdownSharedPanel.UpdateFunction = () =>
+                {
+                    for (int i = 0; i < DropdownSharedPanel.Names.Length; i++)
+                    {
+                        Rect itemRect = DropdownSharedPanel.IndexToRect(i).Shrink(2);
+                        if (Button(itemRect, DropdownSharedPanel.Names[i]))
+                        {
+                            DropdownSharedPanel.SelectedValue = DropdownSharedPanel.Names[i];
+                            DropdownSharedPanel.ShowPanel = false;
+                        }
+                    }
+                };
+                DropdownSharedPanel.SelectedValue = Enum.GetName(typeof(T), value);
+            }
+            //(T)System.Enum.Parse(typeof(T), names[i])
+            if (DropdownSharedPanel.SelectedValue != null && Enum.TryParse(typeof(T), DropdownSharedPanel.SelectedValue, out object g))
+            {
+                return (T)g;
+            }
+            return value;
+        }
 
         public static string TextField(Rect rect, string text, int fontSize = 20, int side = 0, bool draw = true)
         {

@@ -6,32 +6,23 @@ namespace KaneUI7.Panels
     //has an IndexToRect so you can put anything in the dropdown
     public class DropDownPanel : Panel
     {
+        public string SelectedValue;
+        public string[] Names = new string[0];
         public int DropdownHeight;
         private bool justSpawnedPanel = false;
+
         public DropDownPanel(Action? UpdateFunction, int DropdownHeight) : base(UpdateFunction)
         {
             this.DropdownHeight = DropdownHeight;
         }
 
-        public void DrawControl(Rect rect, string Text)
+        public void SpawnDropdown(Rect source, string[] names)
         {
-            Rect area = new Rect(rect.X, rect.Y, rect.Width - 30, rect.Height);
-            Rect arrow = new Rect(rect.X + rect.Width - 30, rect.Y, 30, rect.Height);
-            if (KaneUI.Button(area, Text) || KaneUI.Button(arrow, "V"))
-            {
-                if (!ShowPanel)
-                {
-                    SpawnDropdown(rect);
-                }
-            }
-        }
-
-        public void SpawnDropdown(Rect source)
-        {
-            PanelManager.BringToFront(this);
+            Names = names;
             ShowPanel = true;
-            PanelArea = new Rect(source.X, source.Y + source.Height, source.Width, DropdownHeight);
+            PanelArea = source;
             justSpawnedPanel = true;
+            PanelManager.BringToFront(this);
         }
 
         /// <summary>
@@ -40,7 +31,7 @@ namespace KaneUI7.Panels
         /// <param name="i">The Index of the row you want to use.  0 will be the top of the window</param>
         public Rect IndexToRect(int i)
         {
-            return new Rect(PanelArea.X, PanelArea.Y + i * KaneUI.DefaultItemHeight, PanelArea.Width, KaneUI.DefaultItemHeight);
+            return new Rect(PanelArea.X, PanelArea.Y + (i * KaneUI.DefaultItemHeight), PanelArea.Width, KaneUI.DefaultItemHeight);
         }
 
         /// <summary>
@@ -98,7 +89,6 @@ namespace KaneUI7.Panels
             if (ShowPanel)
             {
                 KaneBlocks.Box(PanelArea);
-
                 if (KaneFoundation.IsLeftClickDown() && !PanelManager.IsMouseInPanel(this) && !justSpawnedPanel)
                 {
                     ShowPanel = false;

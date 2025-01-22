@@ -1,4 +1,5 @@
-﻿using Raylib_cs;
+﻿using ParticleLife.Game;
+using Raylib_cs;
 using System.Numerics;
 
 namespace ParticleLife.Sim
@@ -19,106 +20,75 @@ namespace ParticleLife.Sim
 
             for (int i = 0; i < GroupCount; i++)
             {
-                GroupColors[i] = HsvToRgb((byte)(i * byteSteps), 255, 255);
+                GroupColors[i] = Tools.HsvToRgb((byte)(i * byteSteps), 255, 255);
             }
-
-            //for (int i = 0; i < GroupCount; i++)
-            //{
-            //    GroupColors[i] = new Color((byte)random.Next(0, 255), (byte)random.Next(0, 255), (byte)random.Next(0, 255));
-            //}
         }
 
-        public static Color HsvToRgb(byte hue, byte saturation, byte value)
-        {
-            // Convert input values to float for calculations
-            float h = hue / 255f * 360f;  // Hue in degrees (0-360)
-            float s = saturation / 255f;  // Saturation (0-1)
-            float v = value / 255f;       // Value/Brightness (0-1)
-
-            int hi = (int)(h / 60f) % 6;
-            float f = (h / 60f) - hi;
-            float p = v * (1 - s);
-            float q = v * (1 - f * s);
-            float t = v * (1 - (1 - f) * s);
-
-            float r = 0, g = 0, b = 0;
-
-            switch (hi)
-            {
-                case 0:
-                    r = v; g = t; b = p;
-                    break;
-                case 1:
-                    r = q; g = v; b = p;
-                    break;
-                case 2:
-                    r = p; g = v; b = t;
-                    break;
-                case 3:
-                    r = p; g = q; b = v;
-                    break;
-                case 4:
-                    r = t; g = p; b = v;
-                    break;
-                case 5:
-                    r = v; g = p; b = q;
-                    break;
-            }
-
-            // Convert normalized float (0-1) to byte (0-255) and return Color
-            return new Color(
-                (byte)(r * 255),
-                (byte)(g * 255),
-                (byte)(b * 255)
-            );
-        }
+        public static bool UseWrapping = false;
 
         public static void Update()
         {
             bool doScreenCheck = true;
             Vector2 LeftCornerScreen = Surface.MainCamera.WorldToScreen(new Vector2(0, 0));
             Vector2 RightCornerScreen = Surface.MainCamera.WorldToScreen(new Vector2(SimManager.Bounds[2], SimManager.Bounds[3]));
-            //if (LeftCornerScreen.X < 0 || LeftCornerScreen.Y < 0 || RightCornerScreen.X > Raylib.GetScreenWidth() || RightCornerScreen.Y > Raylib.GetScreenHeight())
-            //{
-            //    doScreenCheck = false;
-            //}
+
+            float simWidth = SimManager.Bounds[2];
+            float simHeight = SimManager.Bounds[3];
 
             for (int i = 0; i < SimManager.PX.Length; i++)
             {
-                Vector2 screenPos = Surface.MainCamera.WorldToScreen(new Vector2(SimManager.PX[i], SimManager.PY[i]));
+                Vector2 particlePos = new Vector2(SimManager.PX[i], SimManager.PY[i]);
 
-
-                if (screenPos.X < 0 || screenPos.Y < 0 || screenPos.X > Raylib.GetScreenWidth() || screenPos.Y > Raylib.GetScreenHeight())
-                {
-                    continue;
-                }
-
-                if (AutoSwitch)
-                {
-                    if (Surface.MainCamera.Scale(ParticleSize) < 1)
+                // If wrapping is enabled, include adjacent regions, otherwise only render the original position
+                Vector2[] wrappedPositions = UseWrapping
+                    ? new Vector2[]
                     {
-                        DrawPixels = true;
+                particlePos,                                   // Original position
+                new Vector2(particlePos.X - simWidth, particlePos.Y),  // Wrapped to the left
+                new Vector2(particlePos.X + simWidth, particlePos.Y),  // Wrapped to the right
+                new Vector2(particlePos.X, particlePos.Y - simHeight), // Wrapped to the top
+                new Vector2(particlePos.X, particlePos.Y + simHeight), // Wrapped to the bottom
+                new Vector2(particlePos.X - simWidth, particlePos.Y - simHeight), // Top-left corner
+                new Vector2(particlePos.X + simWidth, particlePos.Y - simHeight), // Top-right corner
+                new Vector2(particlePos.X - simWidth, particlePos.Y + simHeight), // Bottom-left corner
+                new Vector2(particlePos.X + simWidth, particlePos.Y + simHeight)  // Bottom-right corner
+                    }
+                    : new Vector2[] { particlePos }; // Only the original position if wrapping is disabled
+
+                foreach (var wrappedPos in wrappedPositions)
+                {
+                    Vector2 screenPos = Surface.MainCamera.WorldToScreen(wrappedPos);
+
+                    // Skip if the wrapped position is outside the screen bounds
+                    if (screenPos.X < 0 || screenPos.Y < 0 || screenPos.X > Raylib.GetScreenWidth() || screenPos.Y > Raylib.GetScreenHeight())
+                    {
+                        continue;
+                    }
+
+                    // Adjust rendering mode (pixel or circle) based on the scale
+                    if (AutoSwitch)
+                    {
+                        if (Surface.MainCamera.Scale(ParticleSize) < 1)
+                        {
+                            DrawPixels = true;
+                        }
+                        else
+                        {
+                            DrawPixels = false;
+                        }
+                    }
+
+                    // Render the particle
+                    if (DrawPixels)
+                    {
+                        Raylib.DrawPixelV(screenPos, GroupColors[SimManager.Group[i]]);
                     }
                     else
                     {
-                        DrawPixels = false;
+                        Raylib.DrawCircleV(screenPos, Surface.MainCamera.Scale(ParticleSize), GroupColors[SimManager.Group[i]]);
                     }
                 }
-                if (DrawPixels)
-                {
-                    Raylib.DrawPixelV(screenPos, GroupColors[SimManager.Group[i]]);
-                }
-                else
-                {
-                    Raylib.DrawCircleV(screenPos, Surface.MainCamera.Scale(ParticleSize), GroupColors[SimManager.Group[i]]);
-                }
             }
-            //DrawAttractionMatrix();
-        }
-
-        public static void DrawAttractionMatrix()
-        {
-
         }
     }
 }
