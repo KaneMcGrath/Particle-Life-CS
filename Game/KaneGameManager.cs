@@ -54,6 +54,7 @@ namespace ParticleLife.Game
                 }
             }
             SimRenderer.UseWrapping = KaneUI.CheckBox(GraphicsOptionsWindow.IndexToRect(4).Shrink(2), SimRenderer.UseWrapping, "Use Wrapping");
+            SimRenderer.ShowSimBoundry = KaneUI.CheckBox(GraphicsOptionsWindow.IndexToRect(5).Shrink(2), SimRenderer.ShowSimBoundry, "Show Sim Boundry");
         }
         private static int SelectedMatrixIX = 0;
         private static int SelectedMatrixIY = 0;
@@ -242,7 +243,6 @@ namespace ParticleLife.Game
         Pie,
         Grid,
         Line,
-        Point,
         Circle
     }
 }

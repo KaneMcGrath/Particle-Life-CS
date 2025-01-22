@@ -25,12 +25,11 @@ namespace ParticleLife.Sim
         }
 
         public static bool UseWrapping = false;
+        public static bool ShowSimBoundry = false;
 
         public static void Update()
         {
             bool doScreenCheck = true;
-            Vector2 LeftCornerScreen = Surface.MainCamera.WorldToScreen(new Vector2(0, 0));
-            Vector2 RightCornerScreen = Surface.MainCamera.WorldToScreen(new Vector2(SimManager.Bounds[2], SimManager.Bounds[3]));
 
             float simWidth = SimManager.Bounds[2];
             float simHeight = SimManager.Bounds[3];
@@ -88,6 +87,11 @@ namespace ParticleLife.Sim
                         Raylib.DrawCircleV(screenPos, Surface.MainCamera.Scale(ParticleSize), GroupColors[SimManager.Group[i]]);
                     }
                 }
+
+            }
+            if (ShowSimBoundry)
+            {
+                Raylib.DrawRectangleLinesEx(Surface.MainCamera.TransformRectangle(new Rectangle(0, 0, simWidth, simHeight)), 1, Color.Gray);
             }
         }
     }

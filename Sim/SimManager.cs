@@ -271,10 +271,23 @@ namespace ParticleLife.Sim
 
                 //Distribute large squares of each group side-by-side
                 case ParticleDispersionOptions.Grid:
-                    for (int i = 0; i < count; i++)
+                    DistributeGrid(count, groupCount);
+                    break;
+
+                case ParticleDispersionOptions.Line:
+                    int halfCount = count / 2;
+                    for (int i = 0; i < halfCount; i++)
                     {
-                        PX[i] = (i % groupCount) * Bounds[2] / groupCount;
-                        PY[i] = (i / groupCount) * Bounds[3] / groupCount;
+                        PX[i] = Bounds[2] / 2;
+                        PY[i] = Bounds[3] / 2 + i * Bounds[3] / halfCount;
+                        VX[i] = 0f;
+                        VY[i] = 0f;
+                        Group[i] = i % groupCount;
+                    }
+                    for (int i = halfCount; i < count; i++)
+                    {
+                        PX[i] = Bounds[3] / 2 + i * Bounds[3] / halfCount;
+                        PY[i] = Bounds[2] / 2;
                         VX[i] = 0f;
                         VY[i] = 0f;
                         Group[i] = i % groupCount;
@@ -305,6 +318,58 @@ namespace ParticleLife.Sim
                 VX[i] = 0f;
                 VY[i] = 0f;
                 Group[i] = random.Next(0, groupCount);
+            }
+        }
+        public static void DistributeGrid(int count, int groupCount)
+        {
+            int GroupSize = count / groupCount;
+
+            int CellGridSize = (int)Math.Ceiling(Math.Sqrt(groupCount));
+            int ParticleGridSize = (int)Math.Ceiling(Math.Sqrt(GroupSize));
+            int groupCounter = 0;
+            int CellIndex = 0;
+            float CellWidth = Bounds[2] / CellGridSize;
+            float CellHeight = Bounds[3] / CellGridSize;
+            float particleWidth = CellWidth / ParticleGridSize;
+
+            float getCellX(int index)
+            {
+                return (index % CellGridSize) * CellWidth;
+            }
+            float getCellY(int index)
+            {
+                return (index / CellGridSize) * CellHeight;
+            }
+
+            float GetParticleX(int index)
+            {
+                return (index % ParticleGridSize) * particleWidth;
+            }
+
+            float GetParticleY(int index)
+            {
+
+                return (index / ParticleGridSize) * particleWidth;
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                int groupIndex = i - (CellIndex * GroupSize);
+
+
+                PX[i] = getCellX(CellIndex) + GetParticleX(groupCounter);
+                PY[i] = getCellY(CellIndex) + GetParticleY(groupCounter);
+                Group[i] = CellIndex;
+                groupCounter++;
+                if (groupCounter >= GroupSize)
+                {
+                    groupCounter = 0;
+                    CellIndex++;
+                    if (CellIndex >= groupCount)
+                    {
+                        CellIndex = 0;
+                    }
+                }
             }
         }
         public static void DistributePie(int count, int groupCount)

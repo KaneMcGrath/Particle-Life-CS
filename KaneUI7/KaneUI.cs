@@ -357,7 +357,7 @@ namespace KaneUI7
             Label(Rect, names[index], 20, 4);
             if (Button(new Rect(Rect.X + Rect.Width - Rect.Height, Rect.Y, Rect.Height, Rect.Height), "\\/"))
             {
-                DropdownSharedPanel.SpawnDropdown(new Rect(Rect.X + Rect.Width - 30, Rect.Y + Rect.Height, DropDownWidth, DefaultItemHeight * names.Length), names);
+                DropdownSharedPanel.SpawnDropdown(Constraints.Zero.AdjustToFit(new Rect(Rect.X + Rect.Width - 30, Rect.Y + Rect.Height, DropDownWidth, DefaultItemHeight * names.Length)), names);
 
                 //DropdownSharedPanel.PanelArea = ;
                 DropdownSharedPanel.UpdateFunction = () =>
