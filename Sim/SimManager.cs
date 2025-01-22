@@ -15,7 +15,7 @@ namespace ParticleLife.Sim
         public static int GroupCount = 8;
 
         public static float[] Bounds = new float[] { 0, 0, 5000f, 5000f };
-        public static float dt = 0.001f;
+        public static float dt = 0.0004f;
         public static float Friction = 0.65f;
 
         public static int StepCounter = 0;
@@ -77,7 +77,7 @@ namespace ParticleLife.Sim
             using ReadWriteBuffer<float> AttractorsBuffer = GraphicsDevice.GetDefault().AllocateReadWriteBuffer(Flatten2DArray(ParticleDynamics.AttractionMatrix, ParticleDynamics.AttractionMatrix.GetLength(0)));
 
             GraphicsDevice.GetDefault().For(PX.Length, new ParticleUpdate(PXBuffer, PYBuffer, VXBuffer, VYBuffer, GroupBuffer, ParticleDynamics.MaxRadius, ParticleDynamics.ForceMultiplier, width, height, maxRadiusReciprocal, multiplier, AttractorsBuffer, ParticleDynamics.AttractionMatrix.GetLength(0)));
-
+            //GraphicsDevice.GetDefault().For(PX.Length, new ParticlePositionUpdate(PXBuffer, PYBuffer, VXBuffer, VYBuffer, dt, width, height, Bounds[2]));
             PXBuffer.CopyTo(PX);
             PYBuffer.CopyTo(PY);
             VXBuffer.CopyTo(VX);
@@ -141,8 +141,10 @@ namespace ParticleLife.Sim
                     VX[i] += ax * dt;
                     VY[i] += ay * dt;
                 });
-            }
 
+
+
+            }
             // Update particle positions
             for (int i = 0; i < PX.Length; i++)
             {
@@ -229,6 +231,41 @@ namespace ParticleLife.Sim
                 VYBuffer[i] *= Friction;
                 VXBuffer[i] += ax * dt;
                 VYBuffer[i] += ay * dt;
+            }
+        }
+        [ThreadGroupSize(DefaultThreadGroupSizes.X)]
+        [GeneratedComputeShaderDescriptor]
+        public readonly partial struct ParticlePositionUpdate(ReadWriteBuffer<float> PX, ReadWriteBuffer<float> PY, ReadWriteBuffer<float> VX, ReadWriteBuffer<float> VY, float dt, float width, float height, float bounds) : IComputeShader
+        {
+            public void Execute()
+            {
+                int i = ThreadIds.X;
+                // Update particle positions
+
+                PX[i] += VX[i] * dt;
+                PY[i] += VY[i] * dt;
+
+                // Wrap positions to keep particles within bounds
+                if (PX[i] < 0)
+                {
+                    PX[i] += width;
+                }
+
+                if (PX[i] > bounds)
+                {
+                    PX[i] -= width;
+                }
+
+                if (PY[i] < 0)
+                {
+                    PY[i] += height;
+                }
+
+                if (PY[i] > bounds)
+                {
+                    PY[i] -= height;
+                }
+
             }
         }
 

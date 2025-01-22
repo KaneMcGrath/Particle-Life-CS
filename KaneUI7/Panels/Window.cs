@@ -145,6 +145,7 @@ namespace KaneUI7.Panels
                 }
                 KaneBlocks.Box(titleBarRect, insideColor);
                 KaneUI.Label(titleBarDragRect, Title, 24, 4);
+
                 if (KaneUI.Button(minimizeButtonRect, "-"))
                 {
                     minimize = !minimize;
@@ -157,6 +158,11 @@ namespace KaneUI7.Panels
                     {
                         PanelArea.Height = lastWindowHeight;
                     }
+                    UpdateRects();
+                }
+                if (!minimize && PanelArea.Height != lastWindowHeight)
+                {
+                    PanelArea.Height = lastWindowHeight;
                     UpdateRects();
                 }
                 if (KaneUI.Button(closeButtonRect, "x"))

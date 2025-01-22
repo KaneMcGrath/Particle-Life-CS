@@ -5,7 +5,7 @@ namespace ParticleLife.Sim
 {
     public static class SimRenderer
     {
-        public static float ParticleSize = 5f;
+        public static float ParticleSize = 2f;
         public static Color[] GroupColors = new Color[0];
         public static bool DrawPixels = false;
         public static bool AutoSwitch = true;
@@ -75,13 +75,24 @@ namespace ParticleLife.Sim
 
         public static void Update()
         {
+            bool doScreenCheck = true;
+            Vector2 LeftCornerScreen = Surface.MainCamera.WorldToScreen(new Vector2(0, 0));
+            Vector2 RightCornerScreen = Surface.MainCamera.WorldToScreen(new Vector2(SimManager.Bounds[2], SimManager.Bounds[3]));
+            //if (LeftCornerScreen.X < 0 || LeftCornerScreen.Y < 0 || RightCornerScreen.X > Raylib.GetScreenWidth() || RightCornerScreen.Y > Raylib.GetScreenHeight())
+            //{
+            //    doScreenCheck = false;
+            //}
+
             for (int i = 0; i < SimManager.PX.Length; i++)
             {
                 Vector2 screenPos = Surface.MainCamera.WorldToScreen(new Vector2(SimManager.PX[i], SimManager.PY[i]));
-                if (screenPos.X < 0 || screenPos.X > Raylib.GetScreenWidth() || screenPos.Y < 0 || screenPos.Y > Raylib.GetScreenHeight())
+
+
+                if (screenPos.X < 0 || screenPos.Y < 0 || screenPos.X > Raylib.GetScreenWidth() || screenPos.Y > Raylib.GetScreenHeight())
                 {
                     continue;
                 }
+
                 if (AutoSwitch)
                 {
                     if (Surface.MainCamera.Scale(ParticleSize) < 1)

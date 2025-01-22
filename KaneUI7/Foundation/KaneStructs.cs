@@ -40,6 +40,11 @@ namespace KaneUI7.Foundation
             return new Rect(rect.X - amount, rect.Y - amount, rect.Width + amount * 2, rect.Height + amount * 2);
         }
 
+        public Rect Shrink(int amount)
+        {
+            return new Rect(X + amount, Y + amount, Width - amount * 2, Height - amount * 2);
+        }
+
         public static Rect FromCenter(int x, int y, int width, int height)
         {
             return new Rect(x - width / 2, y - height / 2, width, height);

@@ -189,6 +189,18 @@ namespace KaneUI7
             bool inSliderRect = PanelManager.IsMouseInActivePanelAndRect(SliderRect);
             bool doWeHaveSlider = (HasSlider == Rect);
             KaneBlocks.ActiveBox(SliderRect, inSliderRect || (IsDraggingSlider && doWeHaveSlider));
+            Rect ValueLabel;
+            if (value > valueSpan / 2)
+            {
+                //First half of box
+                ValueLabel = new Rect(Rect.X, Rect.Y, Rect.Width / 2, 25);
+            }
+            else
+            {
+                //Second half of box
+                ValueLabel = new Rect(Rect.X + (Rect.Width / 2), Rect.Y, Rect.Width / 2, 25);
+            }
+            Label(ValueLabel, value.ToString(), 20, 4);
             if (PanelManager.IsMouseInActivePanelAndRect(Rect))
             {
                 //if (Raylib.GetMouseWheelMoveV().Y > 0f)

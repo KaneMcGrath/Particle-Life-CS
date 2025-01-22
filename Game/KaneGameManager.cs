@@ -9,7 +9,7 @@ namespace ParticleLife.Game
     public static class KaneGameManager
     {
 
-        public static string VersionString = "Particle Life (0.2)";
+        public static string VersionString = "Particle Life (0.3)";
 
         public static RGBA ForeGround = new RGBA(44, 44, 44, 255);
         public static RGBA Title = new RGBA(44, 44, 44, 255);
@@ -19,95 +19,127 @@ namespace ParticleLife.Game
         private static Color ClearColor = new Color(21, 21, 21, 21);
         public static bool ClearColorToggle = true;
 
-        public static Window RuntimeOptionsWindow = new Window(RuntimeOptionsWindowUpdate, new Rect(100, 100, 300, 600), "Runtime Options") { };
-        public static Window SetupWindow = new Window(SetupWindowUpdate, new Rect(500, 100, 300, 600), "Setup") { };
-        public static Window AttractionMatrixDisplay = new Window(AttractionMatrixDisplayUpdate, new Rect(900, 100, 600, 630), "Attraction Matrix") { ShowPanel = false };
+        public static Constraints DefaultConstraints = new Constraints(0, 0, 30, 0);
+
+        public static Window RuntimeOptionsWindow = new Window(RuntimeOptionsWindowUpdate, new Rect(10, 100, 300, 600), "Runtime Options", new RGBA("41555b")) { constraints = DefaultConstraints };
+        public static Window SetupWindow = new Window(SetupWindowUpdate, new Rect(50, 100, 300, 600), "Setup", new RGBA("646d60")) { constraints = DefaultConstraints };
+        public static Window AttractionMatrixDisplay = new Window(AttractionMatrixDisplayUpdate, new Rect(90, 100, 500, 650), "Attraction Matrix", new RGBA("59355a")) { constraints = DefaultConstraints };
+        public static Window GraphicsOptionsWindow = new Window(GraphicsOptionsWindowUpdate, new Rect(130, 100, 300, 600), "Graphics Options", new RGBA("c5655c")) { constraints = DefaultConstraints };
 
         private static int SetupParticleCount = 4000;
         private static int SetupGroupCount = 8;
 
+        private static void GraphicsOptionsWindowUpdate()
+        {
+            if (KaneUI.Button(GraphicsOptionsWindow.IndexToRect(0).Shrink(2), "Fullscreen"))
+            {
+                Raylib.SetWindowSize(Raylib.GetMonitorWidth(0), Raylib.GetMonitorHeight(0));
+                Raylib.ToggleFullscreen();
+            }
+        }
+        private static int SelectedMatrixIX = 0;
+        private static int SelectedMatrixIY = 0;
         private static void AttractionMatrixDisplayUpdate()
         {
             int length = ParticleDynamics.AttractionMatrix.GetLength(0);
-            float size = 580 / (length + 1);
+            float size = 480 / (length + 1);
             float halfSize = size / 2;
             //Particle Key
             //  Top
             for (int i = 0; i < length; i++)
             {
-                Raylib.DrawCircle((int)(AttractionMatrixDisplay.ContentRect.X + 10 + ((1 + i) * size) + halfSize), (int)(AttractionMatrixDisplay.ContentRect.Y + 10 + halfSize), halfSize, SimRenderer.GroupColors[i]);
+                Raylib.DrawCircle((int)(AttractionMatrixDisplay.ContentRect.X + 5 + ((1 + i) * size) + halfSize), (int)(AttractionMatrixDisplay.ContentRect.Y + 5 + halfSize), halfSize, SimRenderer.GroupColors[i]);
             }
             //  Side
             for (int i = 0; i < length; i++)
             {
-                Raylib.DrawCircle((int)(AttractionMatrixDisplay.ContentRect.X + 10 + halfSize), (int)(AttractionMatrixDisplay.ContentRect.Y + 10 + ((1 + i) * size) + halfSize), halfSize, SimRenderer.GroupColors[i]);
+                Raylib.DrawCircle((int)(AttractionMatrixDisplay.ContentRect.X + 5 + halfSize), (int)(AttractionMatrixDisplay.ContentRect.Y + 5 + ((1 + i) * size) + halfSize), halfSize, SimRenderer.GroupColors[i]);
             }
             //Matrix
             for (int i = 0; i < SimManager.GroupCount; i++)
             {
                 for (int j = 0; j < SimManager.GroupCount; j++)
                 {
-                    Color c;
+                    RGBA cl;
                     if (ParticleDynamics.AttractionMatrix[i, j] > 0)
                     {
-                        c = new Color(0, (int)(ParticleDynamics.AttractionMatrix[i, j] * 255f), 0);
+                        cl = new RGBA(0, (byte)(ParticleDynamics.AttractionMatrix[i, j] * 255f), 0);
                     }
                     else
                     {
-                        c = new Color((int)(-ParticleDynamics.AttractionMatrix[i, j] * 255f), 0, 0);
+                        cl = new RGBA((byte)(-ParticleDynamics.AttractionMatrix[i, j] * 255f), 0, 0);
                     }
-                    Raylib.DrawRectangle((int)(AttractionMatrixDisplay.ContentRect.X + 10 + size + (size * i)), (int)(AttractionMatrixDisplay.ContentRect.Y + 10 + size + (size * j)), (int)size, (int)size, c);
+                    if (KaneUI.Button(new Rect(AttractionMatrixDisplay.ContentRect.X + 5 + (int)size + ((int)size * i), AttractionMatrixDisplay.ContentRect.Y + 5 + (int)size + ((int)size * j), (int)size, (int)size), "", cl))
+                    {
+                        SelectedMatrixIX = i;
+                        SelectedMatrixIY = j;
+                    }
+
 
                 }
+            }
+            //Selected
+            if (SelectedMatrixIX >= 0 && SelectedMatrixIY >= 0 && SelectedMatrixIX < ParticleDynamics.AttractionMatrix.GetLength(0) && SelectedMatrixIY < ParticleDynamics.AttractionMatrix.GetLength(1))
+            {
+                //left 
+                Raylib.DrawCircle((int)(AttractionMatrixDisplay.ContentRect.X + 10 + halfSize), (int)(AttractionMatrixDisplay.ContentRect.Y + 500 + size + halfSize), halfSize, SimRenderer.GroupColors[SelectedMatrixIY]);
+                //Top
+                Raylib.DrawCircle((int)(AttractionMatrixDisplay.ContentRect.X + 10 + size + halfSize), (int)(AttractionMatrixDisplay.ContentRect.Y + 500 + halfSize), halfSize, SimRenderer.GroupColors[SelectedMatrixIX]);
+                RGBA cl;
+                if (ParticleDynamics.AttractionMatrix[SelectedMatrixIX, SelectedMatrixIY] > 0)
+                {
+                    cl = new RGBA(0, (byte)(ParticleDynamics.AttractionMatrix[SelectedMatrixIX, SelectedMatrixIY] * 255f), 0);
+                }
+                else
+                {
+                    cl = new RGBA((byte)(-ParticleDynamics.AttractionMatrix[SelectedMatrixIX, SelectedMatrixIY] * 255f), 0, 0);
+                }
+                KaneBlocks.Box(new Rect((int)(AttractionMatrixDisplay.ContentRect.X + 10 + size + halfSize), (int)(AttractionMatrixDisplay.ContentRect.Y + 500 + size + halfSize), (int)size, (int)size), cl);
             }
         }
 
 
         private static void SetupWindowUpdate()
         {
-            KaneUI.Label(SetupWindow.IndexToRect(0), "Particle Count   Current [" + SimManager.VX.Length + "]");
-            SetupParticleCount = (int)KaneUI.Slider(SetupWindow.IndexToRect(1, 4, 1, 3), SetupParticleCount, 1, 100000);
-            KaneUI.Label(SetupWindow.IndexToRect(1, 4, 0), SetupParticleCount.ToString());
-            KaneUI.Label(SetupWindow.IndexToRect(3), "Group Count");
-            SetupGroupCount = (int)KaneUI.Slider(SetupWindow.IndexToRect(4), SetupGroupCount, 1, 100);
+            KaneUI.Label(SetupWindow.IndexToRect(0, 6, 0, 2), "Particle Count");
+            SetupParticleCount = (int)KaneUI.Slider(SetupWindow.IndexToRect(0, 6, 2, 4).Shrink(2), SetupParticleCount, 1, 100000);
+            KaneUI.Label(SetupWindow.IndexToRect(1, 6, 0, 2), "Group Count");
+            SetupGroupCount = (int)KaneUI.Slider(SetupWindow.IndexToRect(1, 6, 2, 4).Shrink(2), SetupGroupCount, 1, 100);
 
 
-            if (KaneUI.Button(SetupWindow.IndexToRect(5), "New Board"))
+            if (KaneUI.Button(SetupWindow.IndexToRect(16).Shrink(2), "New Board"))
             {
                 SimManager.Init(SetupParticleCount, SetupGroupCount);
+                Raylib.ClearBackground(ClearColor);
             }
         }
 
         private static void RuntimeOptionsWindowUpdate()
         {
-            KaneUI.Label(RuntimeOptionsWindow.IndexToRect(0), "Delta Time");
-            SimManager.dt = KaneUI.Slider(RuntimeOptionsWindow.IndexToRect(1), SimManager.dt, 0.0001f, 0.01f);
+            KaneUI.Label(RuntimeOptionsWindow.IndexToRect(0, 6, 0, 2), "Delta Time");
+            SimManager.dt = KaneUI.Slider(RuntimeOptionsWindow.IndexToRect(0, 6, 2, 4).Shrink(2), SimManager.dt, 0.00001f, 0.004f);
 
-            KaneUI.Label(RuntimeOptionsWindow.IndexToRect(2), "Max Radius");
-            ParticleDynamics.MaxRadius = KaneUI.Slider(RuntimeOptionsWindow.IndexToRect(3), ParticleDynamics.MaxRadius, 1, 1000);
+            KaneUI.Label(RuntimeOptionsWindow.IndexToRect(1, 6, 0, 2), "Max Radius");
+            ParticleDynamics.MaxRadius = KaneUI.Slider(RuntimeOptionsWindow.IndexToRect(1, 6, 2, 4).Shrink(2), ParticleDynamics.MaxRadius, 1, 1000);
 
-            KaneUI.Label(RuntimeOptionsWindow.IndexToRect(4), "Force Multiplier");
-            ParticleDynamics.ForceMultiplier = KaneUI.Slider(RuntimeOptionsWindow.IndexToRect(5), ParticleDynamics.ForceMultiplier, 1, 1000);
+            KaneUI.Label(RuntimeOptionsWindow.IndexToRect(2, 6, 0, 2), "Force Multiplier");
+            ParticleDynamics.ForceMultiplier = KaneUI.Slider(RuntimeOptionsWindow.IndexToRect(2, 6, 2, 4).Shrink(2), ParticleDynamics.ForceMultiplier, 1, 1000);
 
-            KaneUI.Label(RuntimeOptionsWindow.IndexToRect(6), "Friction");
-            SimManager.Friction = KaneUI.Slider(RuntimeOptionsWindow.IndexToRect(7), SimManager.Friction, 0, 1);
+            KaneUI.Label(RuntimeOptionsWindow.IndexToRect(3, 6, 0, 2), "Friction");
+            SimManager.Friction = KaneUI.Slider(RuntimeOptionsWindow.IndexToRect(3, 6, 2, 4).Shrink(2), SimManager.Friction, 0, 1);
 
-            KaneUI.Label(RuntimeOptionsWindow.IndexToRect(8), "Particle Size");
-            SimRenderer.ParticleSize = KaneUI.Slider(RuntimeOptionsWindow.IndexToRect(9), SimRenderer.ParticleSize, 1, 100);
+            KaneUI.Label(RuntimeOptionsWindow.IndexToRect(4, 6, 0, 2), "Particle Size");
+            SimRenderer.ParticleSize = KaneUI.Slider(RuntimeOptionsWindow.IndexToRect(4, 6, 2, 4).Shrink(2), SimRenderer.ParticleSize, 1, 100);
 
-            SimRenderer.DrawPixels = KaneUI.CheckBox(RuntimeOptionsWindow.IndexToRect(10), SimRenderer.DrawPixels, "Draw Pixels");
+            //SimRenderer.DrawPixels = KaneUI.CheckBox(RuntimeOptionsWindow.IndexToRect(10), SimRenderer.DrawPixels, "Draw Pixels");
 
-            ClearColorToggle = KaneUI.CheckBox(RuntimeOptionsWindow.IndexToRect(12), ClearColorToggle, "Clear Color");
-            if (KaneUI.Button(RuntimeOptionsWindow.IndexToRect(13), "Show Attraction Matrix"))
+            ClearColorToggle = KaneUI.CheckBox(RuntimeOptionsWindow.IndexToRect(5).Shrink(2), ClearColorToggle, "Clear Color");
+            if (KaneUI.Button(RuntimeOptionsWindow.IndexToRect(6).Shrink(2), "Show Attraction Matrix"))
             {
                 AttractionMatrixDisplay.ShowPanel = true;
             }
             //FrameRecorder.Recording = KaneUI.CheckBox(RuntimeOptionsWindow.IndexToRect(13), FrameRecorder.Recording, "Record Frames");
-            if (KaneUI.Button(RuntimeOptionsWindow.IndexToRect(14), "Fullscreen"))
-            {
-                Raylib.SetWindowSize(Raylib.GetMonitorWidth(0), Raylib.GetMonitorHeight(0));
-                Raylib.ToggleFullscreen();
-            }
+
         }
 
         public static void Init()
@@ -120,7 +152,7 @@ namespace ParticleLife.Game
             Konsole.Init();
             Konsole.Log(VersionString);
 
-            SimManager.Init(1000, 8);
+            SimManager.Init(4000, 8);
 
         }
 
@@ -144,6 +176,7 @@ namespace ParticleLife.Game
                     RuntimeOptionsWindow.minimize = false;
                     RuntimeOptionsWindow.ShowPanel = true;
                     PanelManager.BringToFront(RuntimeOptionsWindow);
+
                 }
             }
             if (!SetupWindow.ShowPanel)
@@ -155,12 +188,21 @@ namespace ParticleLife.Game
                     PanelManager.BringToFront(SetupWindow);
                 }
             }
-
+            if (!GraphicsOptionsWindow.ShowPanel)
+            {
+                if (KaneUI.Button(new Rect(400, 0, 200, 30), "Graphics Options"))
+                {
+                    GraphicsOptionsWindow.minimize = false;
+                    GraphicsOptionsWindow.ShowPanel = true;
+                    PanelManager.BringToFront(GraphicsOptionsWindow);
+                }
+            }
             Konsole.Update();
             PanelManager.UpdatePanels();
             PopNotification.Update();
             KaneUI.Label(new Rect(10, Screen.Height - 40, 200, 20), "FPS: " + Raylib.GetFPS());
             KaneUI.Label(new Rect(10, Screen.Height - 20, 200, 20), "FrameTime: " + Raylib.GetFrameTime());
+            KaneUI.Label(new Rect(Screen.Width - 320, Screen.Height - 20, 300, 20), "Press ESC to exit", 24, 5);
 
         }
     }

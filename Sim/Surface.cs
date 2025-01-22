@@ -13,7 +13,7 @@ namespace ParticleLife.Sim
         private static Texture2D Checkerboard;
         private static int CheckerTextureScale = 128;
         private static int CheckerScale;
-        public static Camera MainCamera = new Camera() { Position = new Vector2(2500, 2500), Zoom = 0.2f };
+        public static Camera MainCamera = new Camera() { Position = new Vector2(2500, 2500), Zoom = 0.2f, MaxX = 6000, MinX = -1000, MaxY = 6000, MinY = -1000 };
 
         public static void Init()
         {
