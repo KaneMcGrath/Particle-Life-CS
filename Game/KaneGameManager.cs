@@ -44,6 +44,8 @@ namespace ParticleLife.Game
             int length = ParticleDynamics.AttractionMatrix.GetLength(0);
             float size = 480 / (length + 1);
             float halfSize = size / 2;
+            float fixedSize = 40;
+            float fixedHalfSize = 20;
             //Particle Key
             //  Top
             for (int i = 0; i < length; i++)
@@ -82,9 +84,9 @@ namespace ParticleLife.Game
             if (SelectedMatrixIX >= 0 && SelectedMatrixIY >= 0 && SelectedMatrixIX < ParticleDynamics.AttractionMatrix.GetLength(0) && SelectedMatrixIY < ParticleDynamics.AttractionMatrix.GetLength(1))
             {
                 //left 
-                Raylib.DrawCircle((int)(AttractionMatrixDisplay.ContentRect.X + 10 + halfSize), (int)(AttractionMatrixDisplay.ContentRect.Y + 500 + size + halfSize), halfSize, SimRenderer.GroupColors[SelectedMatrixIY]);
+                Raylib.DrawCircle((int)(AttractionMatrixDisplay.ContentRect.X + 10 + fixedHalfSize), (int)(AttractionMatrixDisplay.ContentRect.Y + 500 + fixedSize + fixedHalfSize), fixedHalfSize, SimRenderer.GroupColors[SelectedMatrixIY]);
                 //Top
-                Raylib.DrawCircle((int)(AttractionMatrixDisplay.ContentRect.X + 10 + size + halfSize), (int)(AttractionMatrixDisplay.ContentRect.Y + 500 + halfSize), halfSize, SimRenderer.GroupColors[SelectedMatrixIX]);
+                Raylib.DrawCircle((int)(AttractionMatrixDisplay.ContentRect.X + 10 + fixedSize + fixedHalfSize), (int)(AttractionMatrixDisplay.ContentRect.Y + 500 + fixedHalfSize), fixedHalfSize, SimRenderer.GroupColors[SelectedMatrixIX]);
                 RGBA cl;
                 if (ParticleDynamics.AttractionMatrix[SelectedMatrixIX, SelectedMatrixIY] > 0)
                 {
@@ -94,7 +96,12 @@ namespace ParticleLife.Game
                 {
                     cl = new RGBA((byte)(-ParticleDynamics.AttractionMatrix[SelectedMatrixIX, SelectedMatrixIY] * 255f), 0, 0);
                 }
-                KaneBlocks.Box(new Rect((int)(AttractionMatrixDisplay.ContentRect.X + 10 + size + halfSize), (int)(AttractionMatrixDisplay.ContentRect.Y + 500 + size + halfSize), (int)size, (int)size), cl);
+                KaneBlocks.Box(new Rect((int)(AttractionMatrixDisplay.ContentRect.X + 10 + fixedSize), (int)(AttractionMatrixDisplay.ContentRect.Y + 500 + fixedSize), (int)fixedSize, (int)fixedSize), cl);
+                ParticleDynamics.AttractionMatrix[SelectedMatrixIX, SelectedMatrixIY] = KaneUI.Slider(new Rect((int)(AttractionMatrixDisplay.ContentRect.X + 10 + fixedSize + fixedSize), (int)(AttractionMatrixDisplay.ContentRect.Y + 500 + fixedSize), 400, (int)fixedSize).Shrink(4), ParticleDynamics.AttractionMatrix[SelectedMatrixIX, SelectedMatrixIY], -1, 1);
+                if (KaneUI.Button(new Rect((int)(AttractionMatrixDisplay.ContentRect.X + 10 + fixedSize + fixedSize + 20f), (int)(AttractionMatrixDisplay.ContentRect.Y + 500 + fixedSize + fixedSize), 30, 30), "0"))
+                {
+                    ParticleDynamics.AttractionMatrix[SelectedMatrixIX, SelectedMatrixIY] = 0;
+                }
             }
         }
 
@@ -139,7 +146,10 @@ namespace ParticleLife.Game
                 AttractionMatrixDisplay.ShowPanel = true;
             }
             //FrameRecorder.Recording = KaneUI.CheckBox(RuntimeOptionsWindow.IndexToRect(13), FrameRecorder.Recording, "Record Frames");
-
+            if (KaneUI.Button(RuntimeOptionsWindow.IndexToRect(7).Shrink(2), "Randomize Positions"))
+            {
+                SimManager.RandomizeParticles(SimManager.VX.Length, ParticleDynamics.AttractionMatrix.GetLength(0));
+            }
         }
 
         public static void Init()

@@ -269,8 +269,7 @@ namespace ParticleLife.Sim
             }
         }
 
-
-        private static void RandomizeParticles(int count, int groupCount)
+        public static void RandomizeParticles(int count, int groupCount)
         {
             Random random = new Random();
             for (int i = 0; i < count; i++)
