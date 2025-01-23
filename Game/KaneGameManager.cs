@@ -9,7 +9,7 @@ namespace ParticleLife.Game
     public static class KaneGameManager
     {
 
-        public static string VersionString = "Particle Life (0.3)";
+        public static string VersionString = "Particle Life CS (0.9)";
 
         public static RGBA ForeGround = new RGBA(44, 44, 44, 255);
         public static RGBA Title = new RGBA(44, 44, 44, 255);
