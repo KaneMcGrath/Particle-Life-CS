@@ -1,4 +1,5 @@
 # Particle Life CS
+[Download latest version](https://github.com/KaneMcGrath/Particle-Life-CS/releases/download/0.9/ParticleLifeCS.zip)
 ![Screen3](https://github.com/user-attachments/assets/b2d3fbab-2afc-467b-a7fd-295143d42458)
 
 A C# simulation of particle life using [Raylib](https://github.com/raylib-cs/raylib-cs) and [ComputeSharp](https://github.com/Sergio0694/ComputeSharp)
