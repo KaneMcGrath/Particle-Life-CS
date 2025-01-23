@@ -1,7 +1,7 @@
 # Particle Life CS
 ![Screen3](https://github.com/user-attachments/assets/b2d3fbab-2afc-467b-a7fd-295143d42458)
 
-A C# simulation of particle life using Raylib and ComputeSharp
+A C# simulation of particle life using [Raylib](https://github.com/raylib-cs/raylib-cs) and [ComputeSharp](https://github.com/Sergio0694/ComputeSharp)
 
 ### Features
  - Select number of particles and groups
