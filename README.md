@@ -10,7 +10,7 @@ A C# simulation of particle life using [Raylib](https://github.com/raylib-cs/ray
  - Multiple distribution patterns
  - Drag and zoom 2d camera
  - Toroidal wrapping (renderable)
- - GPU Compute (around 20,000 particles at 60fps on a rtx 3060)
+ - GPU Compute (around 20,000 particles at 60fps on a rtx 3060. not the most optimized it could be but it works)
  - Completely custom UI for absolutely no reason
 
 ![Screen2](https://github.com/user-attachments/assets/56bea9b7-5c2a-4b3a-9607-e5364654464a)
