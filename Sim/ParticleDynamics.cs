@@ -1,5 +1,4 @@
 ﻿using ComputeSharp;
-using ParticleLife.Game;
 
 namespace ParticleLife.Sim
 {
@@ -19,10 +18,53 @@ namespace ParticleLife.Sim
                 for (int j = 0; j < GroupCount; j++)
                 {
                     AttractionMatrix[i, j] = ((float)random.NextDouble() * 2f) - 1f;
-                    Konsole.Log("Attraction Factor: " + AttractionMatrix[i, j]);
+                    ;
+                }
+            }
+            SimRenderer.Init(GroupCount);
+        }
+
+        //When the attraction matrix is too large, downsample it
+        public static void DownSampleAttractionMatrix(int GroupCount)
+        {
+            float[,] matrixCopy = new float[GroupCount, GroupCount];
+            for (int i = 0; i < GroupCount; i++)
+            {
+                for (int j = 0; j < GroupCount; j++)
+                {
+                    if (i < AttractionMatrix.GetLength(0) && j < AttractionMatrix.GetLength(1))
+                    {
+                        matrixCopy[i, j] = AttractionMatrix[i, j];
+                    }
+                    else
+                    {
+                        matrixCopy[i, j] = ((float)random.NextDouble() * 2f) - 1f;
+                    }
+                }
+            }
+            AttractionMatrix = matrixCopy;
+            //particles with valid groups are ignored
+            //invalid groups are randomized
+            for (int i = 0; i < SimManager.PX.Length; i++)
+            {
+                if (SimManager.Group[i] >= GroupCount)
+                {
+                    SimManager.Group[i] = random.Next(0, GroupCount);
                 }
             }
         }
+
+        public static void RandomizeAttractionMatrix()
+        {
+            for (int i = 0; i < AttractionMatrix.GetLength(0); i++)
+            {
+                for (int j = 0; j < AttractionMatrix.GetLength(1); j++)
+                {
+                    AttractionMatrix[i, j] = ((float)random.NextDouble() * 2f) - 1f;
+                }
+            }
+        }
+
 
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]

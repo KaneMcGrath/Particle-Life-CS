@@ -18,8 +18,6 @@ namespace ParticleLife.Sim
         public static float dt = 0.0004f;
         public static float Friction = 0.65f;
 
-        public static int StepCounter = 0;
-
         public static void Init(int count, int groupCount, ParticleDispersionOptions options = ParticleDispersionOptions.Random)
         {
             GroupCount = groupCount;
@@ -29,8 +27,16 @@ namespace ParticleLife.Sim
             VY = new float[count];
             Group = new int[count];
             DistributeParticles(count, groupCount, options);
-            ParticleDynamics.Init(groupCount);
-            SimRenderer.Init(groupCount);
+
+        }
+
+        public static void RandomizeGroups(int groupCount)
+        {
+            Random random = new Random();
+            for (int i = 0; i < PX.Length; i++)
+            {
+                Group[i] = random.Next(0, groupCount);
+            }
         }
 
         private static float StepTimer = 0f;

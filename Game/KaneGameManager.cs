@@ -21,10 +21,10 @@ namespace ParticleLife.Game
 
         public static Constraints DefaultConstraints = new Constraints(0, 0, 30, 0);
 
-        public static Window RuntimeOptionsWindow = new Window(RuntimeOptionsWindowUpdate, new Rect(10, 100, 300, 600), "Runtime Options", new RGBA("41555b")) { constraints = DefaultConstraints };
-        public static Window SetupWindow = new Window(SetupWindowUpdate, new Rect(50, 100, 300, 600), "Setup", new RGBA("646d60")) { constraints = DefaultConstraints };
+        public static Window RuntimeOptionsWindow = new Window(RuntimeOptionsWindowUpdate, new Rect(10, 100, 300, 300), "Runtime Options", new RGBA("41555b")) { constraints = DefaultConstraints };
+        public static Window SetupWindow = new Window(SetupWindowUpdate, new Rect(50, 100, 300, 300), "Setup", new RGBA("646d60")) { constraints = DefaultConstraints };
         public static Window AttractionMatrixDisplay = new Window(AttractionMatrixDisplayUpdate, new Rect(90, 100, 500, 650), "Attraction Matrix", new RGBA("59355a")) { constraints = DefaultConstraints };
-        public static Window GraphicsOptionsWindow = new Window(GraphicsOptionsWindowUpdate, new Rect(130, 100, 300, 600), "Graphics Options", new RGBA("c5655c")) { constraints = DefaultConstraints };
+        public static Window GraphicsOptionsWindow = new Window(GraphicsOptionsWindowUpdate, new Rect(130, 100, 300, 300), "Graphics Options", new RGBA("c5655c")) { constraints = DefaultConstraints };
 
         private static int SetupParticleCount = 5000;
         private static int SetupGroupCount = 8;
@@ -55,11 +55,19 @@ namespace ParticleLife.Game
             }
             SimRenderer.UseWrapping = KaneUI.CheckBox(GraphicsOptionsWindow.IndexToRect(4).Shrink(2), SimRenderer.UseWrapping, "Use Wrapping");
             SimRenderer.ShowSimBoundry = KaneUI.CheckBox(GraphicsOptionsWindow.IndexToRect(5).Shrink(2), SimRenderer.ShowSimBoundry, "Show Sim Boundry");
+
+            ClearColorToggle = KaneUI.CheckBox(GraphicsOptionsWindow.IndexToRect(6).Shrink(2), ClearColorToggle, "Clear Color");
         }
         private static int SelectedMatrixIX = 0;
         private static int SelectedMatrixIY = 0;
+        private static bool waitForMatrixSizeUpdate = false;
         private static void AttractionMatrixDisplayUpdate()
         {
+            if (waitForMatrixSizeUpdate)
+            {
+                waitForMatrixSizeUpdate = false;
+                return;
+            }
             int length = ParticleDynamics.AttractionMatrix.GetLength(0);
             float size = 480 / (length + 1);
             float halfSize = size / 2;
@@ -77,9 +85,9 @@ namespace ParticleLife.Game
                 Raylib.DrawCircle((int)(AttractionMatrixDisplay.ContentRect.X + 5 + halfSize), (int)(AttractionMatrixDisplay.ContentRect.Y + 5 + ((1 + i) * size) + halfSize), halfSize, SimRenderer.GroupColors[i]);
             }
             //Matrix
-            for (int i = 0; i < SimManager.GroupCount; i++)
+            for (int i = 0; i < ParticleDynamics.AttractionMatrix.GetLength(0); i++)
             {
-                for (int j = 0; j < SimManager.GroupCount; j++)
+                for (int j = 0; j < ParticleDynamics.AttractionMatrix.GetLength(1); j++)
                 {
                     RGBA cl;
                     if (ParticleDynamics.AttractionMatrix[i, j] > 0)
@@ -133,11 +141,31 @@ namespace ParticleLife.Game
             SetupGroupCount = (int)KaneUI.Slider(SetupWindow.IndexToRect(1, 6, 2, 4).Shrink(2), SetupGroupCount, 1, 100);
             KaneUI.Label(SetupWindow.IndexToRect(2, 3, 0), "Distribution");
             ParticleDispersionOption = KaneUI.EnumSelector<ParticleDispersionOptions>(SetupWindow.IndexToRect(2, 3, 1, 2).Shrink(2), ParticleDispersionOption, 100);
-
-            if (KaneUI.Button(SetupWindow.IndexToRect(16).Shrink(2), "Randomize All"))
+            if (KaneUI.Button(SetupWindow.IndexToRect(3).Shrink(2), "Show Attraction Matrix"))
             {
+                AttractionMatrixDisplay.ShowPanel = true;
+                PanelManager.BringToFront(AttractionMatrixDisplay);
+            }
+            KaneUI.Label(SetupWindow.IndexToRect(4).Shrink(2), "Randomize Options");
+            if (KaneUI.Button(SetupWindow.IndexToRect(5, 3, 0).Shrink(2), "Positions"))
+            {
+                SimManager.DistributeParticles(SimManager.VX.Length, ParticleDynamics.AttractionMatrix.GetLength(0), ParticleDispersionOption);
+            }
+            if (KaneUI.Button(SetupWindow.IndexToRect(5, 3, 1).Shrink(2), "Groups"))
+            {
+                SimManager.RandomizeGroups(SetupGroupCount);
+                ParticleDynamics.DownSampleAttractionMatrix(SetupGroupCount);
+                SimRenderer.Init(SetupGroupCount);
+                //waitForMatrixSizeUpdate = true;
+            }
+            if (KaneUI.Button(SetupWindow.IndexToRect(5, 3, 2).Shrink(2), "Matrix"))
+            {
+                ParticleDynamics.RandomizeAttractionMatrix();
+            }
+            if (KaneUI.Button(SetupWindow.IndexToRect(6).Shrink(2), "Randomize All"))
+            {
+                ParticleDynamics.Init(SetupGroupCount);
                 SimManager.Init(SetupParticleCount, SetupGroupCount, ParticleDispersionOption);
-                Raylib.ClearBackground(ClearColor);
             }
         }
 
@@ -154,21 +182,6 @@ namespace ParticleLife.Game
 
             KaneUI.Label(RuntimeOptionsWindow.IndexToRect(3, 6, 0, 2), "Friction");
             SimManager.Friction = KaneUI.Slider(RuntimeOptionsWindow.IndexToRect(3, 6, 2, 4).Shrink(2), SimManager.Friction, 0, 1);
-
-
-
-            //SimRenderer.DrawPixels = KaneUI.CheckBox(RuntimeOptionsWindow.IndexToRect(10), SimRenderer.DrawPixels, "Draw Pixels");
-
-            ClearColorToggle = KaneUI.CheckBox(RuntimeOptionsWindow.IndexToRect(5).Shrink(2), ClearColorToggle, "Clear Color");
-            if (KaneUI.Button(RuntimeOptionsWindow.IndexToRect(6).Shrink(2), "Show Attraction Matrix"))
-            {
-                AttractionMatrixDisplay.ShowPanel = true;
-            }
-            //FrameRecorder.Recording = KaneUI.CheckBox(RuntimeOptionsWindow.IndexToRect(13), FrameRecorder.Recording, "Record Frames");
-            if (KaneUI.Button(RuntimeOptionsWindow.IndexToRect(7).Shrink(2), "Randomize Positions"))
-            {
-                SimManager.RandomizeParticles(SimManager.VX.Length, ParticleDynamics.AttractionMatrix.GetLength(0));
-            }
         }
 
         public static void Init()
@@ -182,7 +195,7 @@ namespace ParticleLife.Game
             Konsole.Log(VersionString);
 
             SimManager.Init(5000, 8);
-
+            ParticleDynamics.Init(8);
         }
 
         public static void Update()
